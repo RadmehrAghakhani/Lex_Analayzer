@@ -66,10 +66,11 @@ class lexeme:
         self.data_types = ["bool", "char", "int", "float", "string"]
         self.relational_operators = [">", "<", ">=", "<=", "==", "!="]
         self.arithmatic_operators = ["+", "-", "*", "/", "%"]
+        self.logic_operators = ["&&", "||", "!"]
         self.whitespaces = [" ", "\t", "\n"]
         self.comment_starter = "/"
         self.comment_ender = "/"
-        # self.symbol_table = {}
+
         # self.buffer = ""
         # self.index = 0
         # self.line_No = 1
@@ -99,6 +100,7 @@ class lexeme:
         self.source_program = ""
         # self.test_file_name = ""
         self.number_of_the_source_program_characters = 0
+
         # self.the_next_lexemeBeginner_index = self.lexemeBeginner_index + 1
 
     @property
@@ -141,10 +143,30 @@ class lexeme:
                     self.doublequote_analyzer()
                 elif self.lexemeForward_character == "'":
                     self.singlequote_analyzer()
+                elif self.lexemeForward_character == "_" or self.is_alpha():
+                    self.identifier_keyword_analyzer()
 
             # print(self.lexemeForward_character)
             # break
         return
+
+    def identifier_keyword_analyzer(self):
+        self.string_buffer = []
+        temporary_index = self.lexemeBeginner_index
+        while not self.EOF:
+            if temporary_index >= self.the_next_lexemeBeginner_index:
+                self.EOF = True
+                continue
+            elif self.source_stream[temporary_index] in self.id_punctuators or \
+                    self.source_stream[temporary_index] in self.arithmatic_operators or \
+                    self.source_stream[temporary_index] in self.relational_operators or \
+                    self.source_stream[temporary_index] in self.whitespaces or \
+                    self.source_stream[temporary_index] == self.assign_ or \
+                    self.source_stream[temporary_index] in self.logic_operators:
+                break
+
+    def is_alpha(self):
+        return 'a' <= self.lexemeForward_character <= 'z' or 'A' <= self.lexemeForward_character <= 'Z'
 
     def singlequote_analyzer(self):
         self.string_buffer = []
