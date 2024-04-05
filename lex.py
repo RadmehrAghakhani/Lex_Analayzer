@@ -99,6 +99,15 @@ class lexeme:
         self.source_program = ""
         # self.test_file_name = ""
         self.number_of_the_source_program_characters = 0
+        # self.the_next_lexemeBeginner_index = self.lexemeBeginner_index + 1
+
+    @property
+    def out_of_range_detector(self):  # Accessing source_stream[lexemeBeginner+1= will not lead to index out of range
+        return self.lexemeBeginner_index + 1 < self.number_of_the_source_program_characters
+
+    @property
+    def the_next_lexemeBeginner_index(self):
+        return self.lexemeBeginner_index + 1
 
     def tokenization_director(self):
 
@@ -120,14 +129,65 @@ class lexeme:
                 # pass
                 elif self.lexemeForward_character == self.comment_starter:
                     self.comment_analyzer()
+                elif self.lexemeForward_character == '>':
+                    self.great_analyzer()
+                elif self.lexemeForward_character == '<':
+                    self.less_analyzer()
+                elif self.lexemeForward_character == '=':
+                    self.equal_analyzer()
+                elif self.lexemeForward_character == '!':
+                    self.not_analyzer()
+                elif self.lexemeForward_character == '"':
+                    self.doublequote_analyzer()
 
             # print(self.lexemeForward_character)
             # break
         return
 
-    @property
-    def out_of_range_detector(self):  # Accessing source_stream[lexemeBeginner+1= wont lead to index out of range
-        return self.lexemeBeginner_index + 1 < self.number_of_the_source_program_characters
+    def doublequote_analyzer(self):
+        self.buffer = []
+        if self.out_of_range_detector():
+            temporary_index = self.the_next_lexemeBeginner_index()
+            while not self.EOF:
+                if temporary_index >= self.number_of_the_source_program_characters:
+                    single_quote_enclosed = "".join(self.buffer)
+                    if len(single_quote_enclosed) <= 1:
+                        self.errors += '{0} {1} (incomplete comment)\n'.format(str(self.line_No),
+                                                                               str(single_quote_enclosed))
+                    else:
+                        self.errors += '{0} {1} (Invalid string literal)\n'.format(str(self.line_No),
+                                                                                   str(single_quote_enclosed))
+
+    def not_analyzer(self):
+        if self.out_of_range_detector() and self.token_stream[self.the_next_lexemeBeginner_index()] == '=':
+            self.token_stream = self.notequal_
+            self.lexemeBeginner_index = self.the_next_lexemeBeginner_index()
+        else:
+            self.token_stream = self.not_
+
+    def equal_analyzer(self):
+        if self.out_of_range_detector() and self.source_stream[self.the_next_lexemeBeginner_index] == '=':
+            self.token_stream += self.equal_
+            self.lexemeBeginner_index += self.the_next_lexemeBeginner_index()
+        else:
+            self.token_stream += self.assign_
+        return
+
+    def less_analyzer(self):
+        if self.out_of_range_detector() and self.token_stream[self.the_next_lexemeBeginner_index] == '=':
+            self.token_stream += self.less_equal_
+            self.lexemeBeginner_index = self.the_next_lexemeBeginner_index()
+        else:
+            self.token_stream += self.less_
+
+    def great_analyzer(self):
+        if self.out_of_range_detector() and self.source_stream[self.the_next_lexemeBeginner_index()]:
+            self.token_stream += self.great_equal_
+            self.lexemeBeginner_index = self.the_next_lexemeBeginner_index()
+        else:
+            self.token_stream += self.greater_
+
+        return
 
     def comment_analyzer(self):
         if self.out_of_range_detector() and self.source_stream[self.lexemeBeginner_index + 1] == self.comment_ender:
@@ -137,7 +197,7 @@ class lexeme:
                     self.line_No += 1
                     self.lexemeBeginner_index += 2
                     break
-                elif self.source_stream[self.lexemeBeginner_index+1] == self.comment_ender:
+                elif self.source_stream[self.lexemeBeginner_index + 1] == self.comment_ender:
                     self.lexemeBeginner_index += 1
                     self.token_stream += self.comment_
 
@@ -145,8 +205,9 @@ class lexeme:
                     self.lexemeBeginner_index += 1
                     self.token_stream += self.division_
                     break
-
-
+        else:
+            pass
+        return
 
     def whitespace(self):
         while not self.EOF:
@@ -154,8 +215,8 @@ class lexeme:
                 self.EOF = True
                 continue
             self.lexemeForward_character = self.source_stream[self.lexemeBeginner_index]
-            print(f"begin index is {self.lexemeBeginner_index}")
-            print(f"the lexeme forward character is :{self.lexemeForward_character}")
+            # print(f"begin index is {self.lexemeBeginner_index}")
+            # print(f"the lexeme forward character is :{self.lexemeForward_character}")
             if self.lexemeForward_character in self.whitespaces:
                 self.lexemeBeginner_index += 1
                 self.token_stream += self.whitespace_
@@ -166,7 +227,7 @@ class lexeme:
                 self.token_stream += self.whitespace_
             else:
                 break
-        print("545454")
+
         return
 
     def lex_starter(self, source_program):
