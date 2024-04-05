@@ -9,7 +9,7 @@ class lexeme:
         self.errors = None
         self.token_stream = None
         self.line_No = None
-        self.buffer = None
+        self.string_buffer = None
         self.lexemeBeginner_index = None
         self.symbol_table = None
         self.number_of_the_source_program_characters = None
@@ -88,7 +88,7 @@ class lexeme:
 
     def lex_configuration_starter(self):
         self.symbol_table = {}
-        self.buffer = ""
+        self.string_buffer = ""
         self.lexemeBeginner_index = 0
         self.line_No = 1
         self.token_stream = ""
@@ -139,24 +139,92 @@ class lexeme:
                     self.not_analyzer()
                 elif self.lexemeForward_character == '"':
                     self.doublequote_analyzer()
+                elif self.lexemeForward_character == "'":
+                    self.singlequote_analyzer()
 
             # print(self.lexemeForward_character)
             # break
         return
 
-    def doublequote_analyzer(self):
-        self.buffer = []
+    def singlequote_analyzer(self):
+        self.string_buffer = []
         if self.out_of_range_detector():
             temporary_index = self.the_next_lexemeBeginner_index()
             while not self.EOF:
-                if temporary_index >= self.number_of_the_source_program_characters:
-                    single_quote_enclosed = "".join(self.buffer)
+                if temporary_index >= self.number_of_the_source_program_characters:  # it means the lexer has reached
+                    # the end of the text stream.
+                    single_quote_enclosed = "".join(self.string_buffer)
                     if len(single_quote_enclosed) <= 1:
-                        self.errors += '{0} {1} (incomplete comment)\n'.format(str(self.line_No),
-                                                                               str(single_quote_enclosed))
+                        self.errors += "{0} {1} (invalid char constant)\n".format(str(self.line_No),
+                                                                                  str(single_quote_enclosed))
                     else:
                         self.errors += '{0} {1} (Invalid string literal)\n'.format(str(self.line_No),
                                                                                    str(single_quote_enclosed))
+                        self.EOF = True
+                elif self.source_stream[temporary_index] == '"':
+                    string_literal = "".join(self.string_buffer)
+                    if len(string_literal) == 0:
+                        self.token_stream += self.constant_strings_
+                    elif len(string_literal) == 1:
+                        self.token_stream += self.constant_strings_
+                    else:
+                        self.token_stream += self.constant_strings_
+
+                elif self.source_stream[temporary_index] == '\n':
+                    single_quote_enclosed = "".join(self.string_buffer)
+                    if len(single_quote_enclosed) <= 1:
+                        self.errors += '{0} {1} (Invalid char constant )\n'.format(str(self.line_No),
+                                                                                   str(single_quote_enclosed))
+                    else:
+                        self.errors += '{0} {1} (Invalid string literal)\n'.format(str(self.line_No),
+                                                                                   str(single_quote_enclosed))
+                else:
+                    self.string_buffer.append(self.source_stream[temporary_index])
+                    temporary_index += 1
+
+            self.lexemeBeginner_index = temporary_index - 1
+        else:  # indicating that there are no characters left in the text stream
+            self.errors += '{0} (invalid char constant)\n'.format(str(self.line_No))
+
+    def doublequote_analyzer(self):
+        self.string_buffer = []
+        if self.out_of_range_detector():
+            temporary_index = self.the_next_lexemeBeginner_index()
+            while not self.EOF:
+                if temporary_index >= self.number_of_the_source_program_characters:  # it means the lexer has reached
+                    # the end of the text stream.
+                    single_quote_enclosed = "".join(self.string_buffer)
+                    if len(single_quote_enclosed) <= 1:
+                        self.errors += "{0} {1} (invalid char constant)\n".format(str(self.line_No),
+                                                                                  str(single_quote_enclosed))
+                    else:
+                        self.errors += '{0} {1} (Invalid string literal)\n'.format(str(self.line_No),
+                                                                                   str(single_quote_enclosed))
+                        self.EOF = True
+                elif self.source_stream[temporary_index] == '"':
+                    string_literal = "".join(self.string_buffer)
+                    if len(string_literal) == 0:
+                        self.token_stream += self.constant_strings_
+                    elif len(string_literal) == 1:
+                        self.token_stream += self.constant_strings_
+                    else:
+                        self.token_stream += self.constant_strings_
+
+                elif self.source_stream[temporary_index] == '\n':
+                    single_quote_enclosed = "".join(self.string_buffer)
+                    if len(single_quote_enclosed) <= 1:
+                        self.errors += '{0} {1} (Invalid char constant )\n'.format(str(self.line_No),
+                                                                                   str(single_quote_enclosed))
+                    else:
+                        self.errors += '{0} {1} (Invalid string literal)\n'.format(str(self.line_No),
+                                                                                   str(single_quote_enclosed))
+                else:
+                    self.string_buffer.append(self.source_stream[temporary_index])
+                    temporary_index += 1
+
+            self.lexemeBeginner_index = temporary_index - 1
+        else:  # indicating that there are no characters left in the text stream
+            self.errors += '{0} (invalid char constant)\n'.format(str(self.line_No))
 
     def not_analyzer(self):
         if self.out_of_range_detector() and self.token_stream[self.the_next_lexemeBeginner_index()] == '=':
