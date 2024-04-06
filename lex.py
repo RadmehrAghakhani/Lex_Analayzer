@@ -1,3 +1,26 @@
+def is_digit(character):
+    return '0'<= character <= '9'
+
+
+def is_alpha(character):
+    return 'a' <= character <= 'z' or 'A' <= character <= 'Z'
+
+
+def is_identifier(identifier):
+    i = 0
+    current_token = ''
+    while i < len(identifier) and(is_alpha(identifier[i])) or\
+    is_digit(identifier[i]) or identifier[i] == '_':
+        current_token += identifier[i]
+        i += 1
+
+    return current_token
+
+
+def is_in_symbol_table(identifier):
+    return True
+
+
 class lexeme:
     def __init__(self):
         # self.test_file_name = None
@@ -5,7 +28,7 @@ class lexeme:
         self.source_stream = None
         self.lexemeForward_character = None
         self.EOF = None
-        self.id_number = None
+        self.identiifcation_number_in_symbol_table = None
         self.errors = None
         self.token_stream = None
         self.line_No = None
@@ -56,14 +79,14 @@ class lexeme:
         self.comment_ = "<T_Comment>\n"
         self.whitespace_ = "<T_Whitespace>\n"
 
-        self.keywords = ["bool", "break", "char",
+        self.keywords = ["break",
                          "continue", "else", "if",
-                         "false", "for", "true",
-                         "int", "print", "return", "true"]
+                         "false", "for",
+                         "print", "return", "true"]
         self.punctuators = ["{", "}", "(", ")", ";", "[", "]", ","]
         self.id_punctuators = self.punctuators.copy()
         self.id_punctuators.extend(["'", '"'])
-        self.data_types = ["bool", "char", "int", "float", "string"]
+        self.data_types = ["bool", "char", "int"]
         self.relational_operators = [">", "<", ">=", "<=", "==", "!="]
         self.arithmatic_operators = ["+", "-", "*", "/", "%"]
         self.logic_operators = ["&&", "||", "!"]
@@ -93,7 +116,7 @@ class lexeme:
         self.lexemeBeginner_index = 0
         self.line_No = 1
         self.token_stream = ""
-        self.id_number = 1
+        self.identiifcation_number_in_symbol_table = 1
         self.errors = "<line number> <error found>\n"
         self.EOF = False
         self.lexemeForward_character = ""
@@ -143,7 +166,7 @@ class lexeme:
                     self.doublequote_analyzer()
                 elif self.lexemeForward_character == "'":
                     self.singlequote_analyzer()
-                elif self.lexemeForward_character == "_" or self.is_alpha():
+                elif self.lexemeForward_character == "_" or is_alpha(self.lexemeForward_character):
                     self.identifier_keyword_analyzer()
 
             # print(self.lexemeForward_character)
@@ -164,9 +187,56 @@ class lexeme:
                     self.source_stream[temporary_index] == self.assign_ or \
                     self.source_stream[temporary_index] in self.logic_operators:
                 break
+            # elif self.source_stream[temporary_index] == '\n':
+            #     self.line_No += 1
+            #     break
+            self.string_buffer.append(self.source_stream[temporary_index])
+            temporary_index += 1
 
-    def is_alpha(self):
-        return 'a' <= self.lexemeForward_character <= 'z' or 'A' <= self.lexemeForward_character <= 'Z'
+        self.lexemeBeginner_index = temporary_index - 1
+        identifier = ''.join(self.string_buffer)
+        if identifier in self.keywords:
+            self.token_stream += self.is_keyword(identifier)
+        elif identifier in self.data_types:
+            self.token_stream += self.is_datatype(identifier)
+        elif is_identifier(identifier):
+            identifier_existence_in_symbol_table = is_in_symbol_table(identifier)
+            if not identifier_existence_in_symbol_table:
+                self.symbol_table[self.identiifcation_number_in_symbol_table] = identifier
+
+    def is_datatype(self, datatype):
+        T_datatype = ""
+        if datatype == "int":
+            T_datatype = self.int_
+        elif datatype == "bool":
+            T_datatype = self.bool_
+        elif datatype == "char":
+            T_datatype = self.char_
+
+
+        return  T_datatype
+    def is_keyword(self, keyword):
+        T_keyword = ""
+        if keyword == "for":
+            T_keyword = self.for_
+        elif keyword == "false":
+            T_keyword = self.false_
+        elif keyword == "print":
+            T_keyword = self.print_
+        elif keyword == "return":
+            T_keyword = self.return_
+        elif keyword == "true":
+            T_keyword = self.true_
+        elif keyword == "if":
+            T_keyword = self.if_
+        elif keyword == "else":
+            T_keyword = self.else_
+        elif keyword == "continue":
+            T_keyword = self.continue_
+        elif keyword == "break":
+            T_keyword = self.break_
+
+        return T_keyword
 
     def singlequote_analyzer(self):
         self.string_buffer = []
