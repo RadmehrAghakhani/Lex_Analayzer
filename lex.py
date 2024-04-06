@@ -1,5 +1,5 @@
 def is_digit(character):
-    return '0'<= character <= '9'
+    return '0' <= character <= '9'
 
 
 def is_alpha(character):
@@ -9,16 +9,25 @@ def is_alpha(character):
 def is_identifier(identifier):
     i = 0
     current_token = ''
-    while i < len(identifier) and(is_alpha(identifier[i])) or\
-    is_digit(identifier[i]) or identifier[i] == '_':
+    while i < len(identifier) and (is_alpha(identifier[i])) or \
+            is_digit(identifier[i]) or identifier[i] == '_':
         current_token += identifier[i]
         i += 1
 
     return current_token
 
 
-def is_in_symbol_table(identifier):
-    return True
+def is_in_symbol_table(identifier, symbol_table):
+    result = False
+    if identifier in symbol_table:
+        result = True
+    else:
+        pass
+    return result
+
+
+
+
 
 
 class lexeme:
@@ -28,7 +37,7 @@ class lexeme:
         self.source_stream = None
         self.lexemeForward_character = None
         self.EOF = None
-        self.identiifcation_number_in_symbol_table = None
+        self.identification_number_in_symbol_table = None
         self.errors = None
         self.token_stream = None
         self.line_No = None
@@ -63,11 +72,11 @@ class lexeme:
         self.or_ = "<T_LOp_OR>\n"
         self.not_ = "<T_LOp_NOT>\n"
         self.assign_ = "<T_Assign>\n"
-        self.lp_ = "<T_LP>\n"
+        self.lp_ = "<T_LP>\n" # (
         self.rp_ = "<T_RP>\n"
-        self.lc_ = "<T_LC>\n"
+        self.lc_ = "<T_LC>\n"# {
         self.rc_ = "<T_RC>\n"
-        self.lb_ = "<T_LB>\n"
+        self.lb_ = "<T_LB>\n" # [
         self.rb_ = "<T_RB>\n"
         self.semicolon_ = "<T_Semicolon>\n"
         self.comma_ = "<T_Comma>\n"
@@ -94,18 +103,6 @@ class lexeme:
         self.comment_starter = "/"
         self.comment_ender = "/"
 
-        # self.buffer = ""
-        # self.index = 0
-        # self.line_No = 1
-        # self.token_stream = ""
-        # self.id_number = 1
-        # self.errors = "<line number> <error found>\n"
-        # self.end = False
-        # self.peek = ""
-        # self.test_file = ""
-        # self.test_file_name = ""
-        # self.length = 0
-
         self.errors_ = ["Error: Identifier is too long", "Error: Number is too long", "Error: Invalid symbol",
                         "Error: Invalid assignment operator", "Error: Invalid keyword",
                         "Error: Invalid symbol after assignment operator", "Error: Invalid symbol after number"]
@@ -116,7 +113,7 @@ class lexeme:
         self.lexemeBeginner_index = 0
         self.line_No = 1
         self.token_stream = ""
-        self.identiifcation_number_in_symbol_table = 1
+        self.identification_number_in_symbol_table = 1
         self.errors = "<line number> <error found>\n"
         self.EOF = False
         self.lexemeForward_character = ""
@@ -149,9 +146,8 @@ class lexeme:
                     self.token_stream += self.multiplication_
                 elif self.lexemeForward_character == "%":
                     self.token_stream += self.remainder
-                # elif self.lexemeForward_character in self.punctuators:
-                # self.token_stream +=
-                # pass
+                elif self.lexemeForward_character in self.punctuators:
+                    self.token_stream += self.punctuator_analyzer(self.lexemeForward_character)
                 elif self.lexemeForward_character == self.comment_starter:
                     self.comment_analyzer()
                 elif self.lexemeForward_character == '>':
@@ -168,10 +164,30 @@ class lexeme:
                     self.singlequote_analyzer()
                 elif self.lexemeForward_character == "_" or is_alpha(self.lexemeForward_character):
                     self.identifier_keyword_analyzer()
-
+                
             # print(self.lexemeForward_character)
             # break
         return
+
+    def punctuator_analyzer(self, character):
+        T_punctuator = ""
+        if character == "{":
+            T_punctuator = self.lc_
+        elif character == "}":
+            T_punctuator = self.rc_
+        elif character == "(":
+            T_punctuator = self.lp_
+        elif character == ")":
+            T_punctuator = self.rp_
+        elif character == "[":
+            T_punctuator = self.lb_
+        elif character == "]":
+            T_punctuator = self.rb_
+        elif character == ",":
+            T_punctuator = self.comma_
+        elif character == ";":
+            T_punctuator = self.semicolon_
+        return T_punctuator
 
     def identifier_keyword_analyzer(self):
         self.string_buffer = []
@@ -200,9 +216,15 @@ class lexeme:
         elif identifier in self.data_types:
             self.token_stream += self.is_datatype(identifier)
         elif is_identifier(identifier):
-            identifier_existence_in_symbol_table = is_in_symbol_table(identifier)
+            identifier_existence_in_symbol_table = is_in_symbol_table(identifier, self.symbol_table)
             if not identifier_existence_in_symbol_table:
-                self.symbol_table[self.identiifcation_number_in_symbol_table] = identifier
+                self.symbol_table[self.identification_number_in_symbol_table] = identifier
+                self.token_stream += self.variable_function_names_.replace("\n>", "") + "> " + f"<{identifier}\n>"
+                self.identification_number_in_symbol_table += 1
+            else:
+                self.token_stream += self.variable_function_names_.replace("\n>", "") + "> " + f"<{identifier}\n>"
+        else:
+            self.errors += "{0} unrecognized token\n".format(str(identifier))
 
     def is_datatype(self, datatype):
         T_datatype = ""
@@ -213,8 +235,8 @@ class lexeme:
         elif datatype == "char":
             T_datatype = self.char_
 
+        return T_datatype
 
-        return  T_datatype
     def is_keyword(self, keyword):
         T_keyword = ""
         if keyword == "for":
